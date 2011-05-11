@@ -10,6 +10,7 @@
 #define WM_APP_TRAYMSG WM_APP + 100
 
 CAppModule _Module;
+LPCTSTR gszWindowName = _T("com.github.russelldavis.keyfix");
 
 class CKeyFixTray : public CSystemTray
 {
@@ -19,6 +20,11 @@ protected:
 		if (idMenu == ID_TRAYMENU_EXIT)
 		{
 			PostQuitMessage(0);
+		}
+		else if (idMenu == ID_TRAYMENU_RELOAD)
+		{
+			CKeyFix::RemoveHook();
+			CKeyFix::SetHook();
 		}
 	}
 };
@@ -35,7 +41,8 @@ int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 	HICON hIcon = LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
 	CKeyFixTray sysTray;
 	sysTray.Create(_Module.GetModuleInstance(), NULL, WM_APP_TRAYMSG, _T("KeyFix"), hIcon, IDR_TRAYMENU);
-
+	HWND hWnd = sysTray.GetSafeHwnd();
+	SetWindowText(hWnd, gszWindowName);
 
 	int nRet = theLoop.Run();
 
@@ -47,6 +54,13 @@ int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 
 int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lpstrCmdLine, int nCmdShow)
 {
+	HWND hwndPrev = FindWindow(_T("TrayIconClass"), gszWindowName);
+	if (hwndPrev)
+	{
+		PostMessage(hwndPrev, WM_COMMAND, MAKEWPARAM(ID_TRAYMENU_RELOAD, 0), NULL);
+		return 0;
+	}
+
 	HRESULT hRes = ::CoInitialize(NULL);
 // If you are running on NT 4.0 or higher you can use the following call instead to 
 // make the EXE free threaded. This means that calls come in on a random RPC thread.
